@@ -1,9 +1,12 @@
-from email.policy import default
+
 
 import pandas as pd
 import streamlit as st
+import plotly.graph_objects as go
+
+
 st.set_page_config(layout="wide")
-from altair import value
+
 
 #mostrar tab com dados enviados, e mostrar os 2 tipos de gráficos :D
 
@@ -43,7 +46,7 @@ if upload_arquivo_csv is not None:
         st.write('Nova Tabela Atualizada: ')
         df_upl_csv_att = df_upload_arquivo_csv[colunas_manter]
 
-        df_upl_csv_att['Media_deformacao(mm)'] = ((df_upl_csv_att['Ch1 (mm)']+df_upl_csv_att['Ch2 (mm)'])/2)
+
 
         df_upl_csv_att['Ch3 (N)'] = df_upl_csv_att['Ch3 (kgf)']*9.81
         diam_cil = st.number_input('Digite o Valor do diâmetro do cilindro (mm) : ', value=50)
@@ -55,24 +58,85 @@ if upload_arquivo_csv is not None:
         df_upl_csv_att.insert(1,'deformação 1 (mm)',def_1)
         def_2 = abs(df_upl_csv_att['Ch2 (mm)'] / compr_inicial)
         df_upl_csv_att.insert(3, 'deformação 2 (mm)', def_2)
+        def_med = ((df_upl_csv_att['deformação 1 (mm)'] + df_upl_csv_att['deformação 2 (mm)']) / 2)
+
+        df_upl_csv_att.insert(4, 'deformação media (mm)' ,def_med)
+
+
+
 
         linha_maximos= df_upl_csv_att.abs().max(numeric_only=True).to_frame().T
         linha_maximos.index = ['Valores Máximos']
         df_csv_max = pd.concat([linha_maximos,df_upl_csv_att])
         st.dataframe(df_csv_max, use_container_width=True)
-
-        st.write('Plotando com Streamlit ')
-
-        df_grafico_def1 = df_upl_csv_att[['Tensão de compressão (MPa)','deformação 1 (mm)']]
-        df_grafico_def1=df_grafico_def1.set_index('deformação 1 (mm)')
-        st.line_chart(df_grafico_def1)
-
-        df_grafico_def2 = df_upl_csv_att[['Tensão de compressão (MPa)', 'deformação 2 (mm)']]
-        df_grafico_def2 = df_grafico_def2.set_index('deformação 2 (mm)')
-        st.line_chart(df_grafico_def2)
+        #
+        # st.write('Plotando com Streamlit ')
+        #
+        # df_grafico_def1 = df_upl_csv_att[['Tensão de compressão (MPa)','deformação 1 (mm)']]
+        # df_grafico_def1=df_grafico_def1.set_index('deformação 1 (mm)')
+        # st.line_chart(df_grafico_def1)
+        #
+        # df_grafico_def2 = df_upl_csv_att[['Tensão de compressão (MPa)', 'deformação 2 (mm)']]
+        # df_grafico_def2 = df_grafico_def2.set_index('deformação 2 (mm)')
+        # st.line_chart(df_grafico_def2)
 
         st.write('Plotando com Plotly')
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=df_upl_csv_att['deformação 1 (mm)'].abs(),
+            y=df_upl_csv_att['Tensão de compressão (MPa)'],
+            mode = 'lines',
+            name='Canal 1',
+            line=dict(color='yellow')
 
+         ))
+
+        fig.add_trace(go.Scatter(
+            x=df_upl_csv_att['deformação 2 (mm)'].abs(),
+            y=df_upl_csv_att['Tensão de compressão (MPa)'],
+            mode='lines',
+            name='Canal 2',
+            line=dict(color='orange')
+
+        ))
+        fig.add_trace(go.Scatter(
+            x=df_upl_csv_att['deformação media (mm)'].abs(),
+            y=df_upl_csv_att['Tensão de compressão (MPa)'],
+            mode='lines',
+            name='Canal 3',
+            line=dict(color='blue'),
+            visible = 'legendonly'
+
+        ))
+
+
+
+        fig.update_layout(
+            title='Tensão vs Deformação (canal 1 e 2 ) ',
+            xaxis_title = 'Deformação (mm)',
+            yaxis_title = 'Tensão (MPa)',
+            template = 'plotly_white'
+        )
+        st.plotly_chart(fig)
+
+        fig1 = go.Figure()
+
+        fig1.add_trace(go.Scatter(
+            x=df_upl_csv_att['deformação media (mm)'].abs(),
+            y=df_upl_csv_att['Tensão de compressão (MPa)'],
+            mode='lines',
+            name='Canal 3',
+            line=dict(color='blue')
+
+        ))
+
+        fig1.update_layout(
+            title='Tensão vs Deformação (Média) ',
+            xaxis_title='Deformação (mm)',
+            yaxis_title='Tensão (MPa)',
+            template='plotly_white'
+        )
+        st.plotly_chart(fig1)
     except Exception as e:
         st.error(f'Erro ao carregar o arquivo {e}. Certifique-se que seja um arquivo CSV válido.')
 
