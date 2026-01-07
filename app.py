@@ -110,7 +110,10 @@ if arquivos_carregados:
 
                 # --- DATAFRAME INDIVIDUAL (O que estava faltando) ---
                 st.write("### Dados Processados do Ensaio")
-                st.dataframe(df_att, use_container_width=True)
+                df_att = df_att.drop(columns=['Scan','Data', 'Horário'])
+
+                if st.button(label=f'Exibir dados de {nome_cp}', key=f"btn_{f_key}"):
+                    st.dataframe(df_att, use_container_width=True)
 
                 resultados_gerais.append({
                     "ID": nome_cp, "Original": arquivo.name, "Modulo": E, "Tmax": t_max,
@@ -185,4 +188,4 @@ if arquivos_carregados:
                 chart.set_chartarea({'border': {'none': True}})
                 ws.insert_chart('O2', chart)
 
-        st.download_button("📊 Baixar Excel Mestre Consolidado", buffer.getvalue(), "Relatorio_Final.xlsx")
+        st.download_button("📊 Baixar Excel Completo", buffer.getvalue(), "Relatorio_Final.xlsx")
